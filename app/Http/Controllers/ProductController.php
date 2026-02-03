@@ -2,16 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\ProductRequest;
 use App\Models\Product;
+use Illuminate\Http\Request;
+use App\Services\ProductService;
 
 class ProductController extends Controller
 {
     //
+    protected $productService;
+    public function __construct(ProductService $productService)
+    {
+        $this->productService = $productService;
+    }
 
     public function index()
     {
-        $product = Product::all();
+        $product = $this->productService->getAll();
         return response()->json([
             'status' => true,
             'message' => 'Product fetched successfully',
@@ -19,14 +26,9 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(ProductRequest $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
-        ]);
-        Product::create($request->all());
+        $product = $this->productService->create($request->all());
         return response()->json([
             'status' => true,
             'message' => 'Product created successfully'
@@ -35,7 +37,7 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::findOrFail($id);
+        $product = $this->productService->find($id);
         return response()->json([
             'status' => true,
             'message' => 'Product fetched successfully',
@@ -45,8 +47,7 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
-        $product = Product::find($id);
-        $product->update($request->all());
+        $product = $this->productService->update($id, $request->all());
         return response()->json([
             'status' => true,
             'message' => 'Product updated successfully',
@@ -56,8 +57,7 @@ class ProductController extends Controller
 
     public function destroy($id)
     {
-        $product = Product::find($id);
-        $product->delete();
+        $product = $this->productService->delete($id);
         return response()->json([
             'status' => true,
             'message' => 'Product deleted successfully',
