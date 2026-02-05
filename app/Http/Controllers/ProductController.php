@@ -6,6 +6,9 @@ use App\Http\Requests\ProductRequest;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Services\ProductService;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderPlacedMail;
+use Illuminate\Support\Facades\Cache;
 
 class ProductController extends Controller
 {
@@ -18,17 +21,21 @@ class ProductController extends Controller
 
     public function index()
     {
-        $product = $this->productService->getAll();
-        return response()->json([
-            'status' => true,
-            'message' => 'Product fetched successfully',
-            'data' => $product
-        ]);
+        return Cache::remember('products_' . auth()->id(), 60, function () {
+            $product = $this->productService->getAll();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Product fetched successfully',
+                'data' => $product
+            ]);
+        });
     }
 
     public function store(ProductRequest $request)
     {
         $product = $this->productService->create($request->all());
+        Mail::to(auth()->user()->email)->send(new OrderPlacedMail());
         return response()->json([
             'status' => true,
             'message' => 'Product created successfully'
